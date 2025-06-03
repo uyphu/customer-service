@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: customer-service
+  datasource:
+    url: jdbc:postgresql://stage-db-host:5432/customerdb
+    driver-class-name: org.postgresql.Driver
+    username: stage_user
+    password: stage_pass
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  h2:
+    console:
+      enabled: false
