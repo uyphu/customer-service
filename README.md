@@ -44,6 +44,12 @@ This project is a **Spring Boot REST API** for managing customers, including ope
 - Java 17+
 - Maven
 
+### 🧪 Run Install
+
+```bash
+./mvnw clean install
+```
+
 ### 🧪 Run Tests
 
 ```bash
