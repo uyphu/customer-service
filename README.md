@@ -16,7 +16,6 @@ This project is a **Spring Boot REST API** for managing customers, including ope
 - Global exception handling
 - Logging to file and console
 - Prometheus health endpoints
-- Tracing with `traceId` and `spanId` using Spring Sleuth
 - Full unit test coverage with JaCoCo and Postman collection
 
 ---
@@ -34,7 +33,6 @@ This project is a **Spring Boot REST API** for managing customers, including ope
 - JaCoCo
 - OpenAPI / Swagger
 - Prometheus (optional)
-- Sleuth (for tracing)
 - Postman (for API tests)
 
 ---
@@ -49,4 +47,61 @@ This project is a **Spring Boot REST API** for managing customers, including ope
 ### 🧪 Run Tests
 
 ```bash
-mvn clean test
+./mvnw clean test
+```
+
+### ▶️ Start Application
+
+```bash
+./mvnw spring-boot:run
+```
+### 🧪 Swagger UI
+- Interactive API documentation:
+📍 http://localhost:8080/swagger-ui/index.html
+
+- OpenAPI spec:
+📄 http://localhost:8080/v3/api-docs
+
+### 💾 H2 Console
+In-memory database access:
+🌐 http://localhost:8080/h2-console
+
+- Configuration:
+- JDBC URL: jdbc:h2:mem:customerdb
+- Username: sa
+- Password: (leave blank)
+
+### 📤 API Endpoints
+
+| Method | Endpoint                 | Description           |
+|--------|--------------------------|-----------------------|
+| POST   | `/customers`             | Create new customer   |
+| GET    | `/customers/{id}`        | Get customer by ID    |
+| GET    | `/customers?name=...`    | Get customer by name  |
+| GET    | `/customers?email=...`   | Get customer by email |
+| PUT    | `/customers/{id}`        | Update customer       |
+| DELETE | `/customers/{id}`        | Delete customer       |
+### 📁 Logging
+- Logs are stored at: logs/customer-service.log
+
+### 📈 Health Check & Metrics
+- Health: GET /actuator/health
+- Info: GET /actuator/info
+- Prometheus: GET /actuator/prometheus
+
+### 📬 Postman Collection
+- postman/Customer-API-Test-Cases.postman_collection.json
+
+### ✅ Test Coverage (JaCoCo)
+- Generate the code coverage report:
+```bash
+./mvnw clean test jacoco:report
+```
+- View the HTML report:
+```bash
+open target/site/jacoco/index.html
+```
+
+### 👨‍💻 Author
+#### Phu Le
+📫 Task for assignment June 2nd, 2025
