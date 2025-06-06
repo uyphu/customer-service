@@ -4,15 +4,15 @@ import com.tcs.assignment.customer.constant.CustomerConstants;
 import com.tcs.assignment.customer.dto.CustomerRequest;
 import com.tcs.assignment.customer.dto.CustomerResponse;
 import com.tcs.assignment.customer.entity.Customer;
+import com.tcs.assignment.customer.exception.CustomerNotFoundException;
 import com.tcs.assignment.customer.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -48,30 +48,30 @@ public class CustomerServiceImpl implements CustomerService {
                 .map(this::toResponse)
                 .orElseThrow(() -> {
                     log.warn("Customer not found with ID: {}", id);
-                    return notFoundException();
+                    throw new CustomerNotFoundException(getMessage("customer.error.not-found"));
                 });
     }
 
     @Override
     public CustomerResponse getByName(String name) {
         log.debug("Fetching customer by name: {}", name);
-        return customerRepository.findByNameIgnoreCase(name)
-                .map(this::toResponse)
-                .orElseThrow(() -> {
-                    log.warn("Customer not found with name: {}", name);
-                    return notFoundException();
-                });
+        List<Customer> customers = customerRepository.findAllByNameIgnoreCase(name);
+        if (customers.isEmpty()) {
+            log.warn("Customer not found with name: {}", name);
+            throw new CustomerNotFoundException(getMessage("customer.error.not-found"));
+        }
+        return toResponse(customers.get(0)); // Return first match
     }
 
     @Override
     public CustomerResponse getByEmail(String email) {
         log.debug("Fetching customer by email: {}", email);
-        return customerRepository.findByEmailIgnoreCase(email)
-                .map(this::toResponse)
-                .orElseThrow(() -> {
-                    log.warn("Customer not found with email: {}", email);
-                    return notFoundException();
-                });
+        List<Customer> customers = customerRepository.findAllByEmailIgnoreCase(email);
+        if (customers.isEmpty()) {
+            log.warn("Customer not found with email: {}", email);
+            throw new CustomerNotFoundException(getMessage("customer.error.not-found"));
+        }
+        return toResponse(customers.get(0)); // Return first match
     }
 
     @Override
@@ -79,12 +79,12 @@ public class CustomerServiceImpl implements CustomerService {
         log.debug("Fetching customer by name/email: {} / {}", name, email);
 
         if (name != null && email != null) {
-            return customerRepository.findByNameAndEmailAllIgnoreCase(name, email)
-                    .map(this::toResponse)
-                    .orElseThrow(() -> {
-                        log.warn("Customer not found with name/email: {} / {}", name, email);
-                        return notFoundException();
-                    });
+            List<Customer> customers = customerRepository.findAllByNameAndEmailAllIgnoreCase(name, email);
+            if (customers.isEmpty()) {
+                log.warn("Customer not found with name/email: {} / {}", name, email);
+                throw new CustomerNotFoundException(getMessage("customer.error.not-found"));
+            }
+            return toResponse(customers.get(0)); // Return first match
         }
 
         if (name != null) {
@@ -96,7 +96,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         log.error("Missing query parameters: name and email");
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, getMessage("customer.error.missing-query"));
+        throw new IllegalArgumentException(getMessage("customer.error.missing-query"));
     }
 
     @Override
@@ -106,8 +106,9 @@ public class CustomerServiceImpl implements CustomerService {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> {
                     log.warn("Customer not found with ID: {}", id);
-                    return notFoundException();
+                    throw new CustomerNotFoundException(getMessage("customer.error.not-found"));
                 });
+
         customer.setName(request.getName());
         customer.setEmail(request.getEmail());
         customer.setAnnualSpend(request.getAnnualSpend());
@@ -124,7 +125,7 @@ public class CustomerServiceImpl implements CustomerService {
         log.info("Deleting customer with ID: {}", id);
         if (!customerRepository.existsById(id)) {
             log.warn("Customer to delete not found: {}", id);
-            throw notFoundException();
+            throw new CustomerNotFoundException(getMessage("customer.error.not-found"));
         }
         customerRepository.deleteById(id);
         log.info("Customer deleted: {}", id);
@@ -157,9 +158,5 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         return CustomerConstants.TIER_SILVER;
-    }
-
-    private ResponseStatusException notFoundException() {
-        return new ResponseStatusException(HttpStatus.NOT_FOUND, getMessage("customer.error.not-found"));
     }
 }

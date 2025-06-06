@@ -68,14 +68,21 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 409\", function () {",
-							"    pm.response.to.have.status(409);",
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"pm.test(\"Body matches phule@example.com\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"phule2@example.com\");",
 							"});",
 							"",
-							"pm.test(\"Error should be Name already exists\", function () {",
+							"pm.test(\"Tier should be Silver\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.error).to.eql(\"Name already exists\");",
-							"});"
+							"    pm.expect(jsonData.tier).to.eql(\"Silver\");",
+							"",
+							"    pm.globals.set(\"customerIdWithNameExists\", jsonData.id);",
+							"});",
+							"",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -95,7 +102,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"name\": \"Phu Le\",\n  \"email\": \"phule2@example.com\",\n  \"annualSpend\": 1000,\n  \"lastPurchaseDate\": \"2025-06-03T01:42:07\"\n}"
+					"raw": "{\n  \"name\": \"Phu Le\",\n  \"email\": \"phule2@example.com\",\n  \"annualSpend\": 900,\n  \"lastPurchaseDate\": \"2025-06-03T01:42:07\"\n}"
 				},
 				"url": {
 					"raw": "localhost:8080/customers",
@@ -117,14 +124,21 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 409\", function () {",
-							"    pm.response.to.have.status(409);",
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"pm.test(\"Body matches phule@example.com\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"phule@example.com\");",
 							"});",
 							"",
-							"pm.test(\"Error should be Email already exists\", function () {",
+							"pm.test(\"Tier should be Gold\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.error).to.eql(\"Email already exists\");",
-							"});"
+							"    pm.expect(jsonData.tier).to.eql(\"Gold\");",
+							"",
+							"    pm.globals.set(\"customerIdWithEmailExists\", jsonData.id);",
+							"});",
+							"",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -473,6 +487,56 @@
 			"response": []
 		},
 		{
+			"name": "04c. Get Customer by Invalid Param",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"pm.test(\"Error should be At least one parameter (name or email) must be provided\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.error).to.eql(\"At least one parameter (name or email) must be provided\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "localhost:8080/customers?invalid=phule@example.com",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"customers"
+					],
+					"query": [
+						{
+							"key": "invalid",
+							"value": "phule@example.com"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "05. Get Customer by ID - Not Found",
 			"event": [
 				{
@@ -534,9 +598,59 @@
 							"",
 							"pm.test(\"Tier should be Gold\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.tier).to.eql(\"Gold\");",
+							"    pm.expect(jsonData.tier).to.eql(\"Silver\");",
 							"});",
 							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Phu Le Updated\",\n  \"email\": \"phule.updated@example.com\",\n  \"annualSpend\": 998,\n  \"lastPurchaseDate\": \"2024-06-04T01:42:07\"\n}"
+				},
+				"url": {
+					"raw": "localhost:8080/customers/{{customerId}}",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"customers",
+						"{{customerId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "06a. Update Customer by ID Not Found",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							"",
+							"pm.test(\"Error should be Customer not found\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.error).to.eql(\"Customer not found\");",
+							"});"
 						],
 						"type": "text/javascript"
 					}
@@ -559,14 +673,14 @@
 					"raw": "{\n  \"name\": \"Phu Le Updated\",\n  \"email\": \"phule.updated@example.com\",\n  \"annualSpend\": 5000,\n  \"lastPurchaseDate\": \"2024-06-04T01:42:07\"\n}"
 				},
 				"url": {
-					"raw": "localhost:8080/customers/{{customerId}}",
+					"raw": "localhost:8080/customers/0757bd30-c957-42ea-9cb5-6c73928d32ce",
 					"host": [
 						"localhost"
 					],
 					"port": "8080",
 					"path": [
 						"customers",
-						"{{customerId}}"
+						"0757bd30-c957-42ea-9cb5-6c73928d32ce"
 					]
 				}
 			},
@@ -608,6 +722,134 @@
 					"path": [
 						"customers",
 						"{{customerId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "07a. Delete Customer by ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 204\", function () {",
+							"    pm.response.to.have.status(204);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "localhost:8080/customers/{{customerIdWithNameExists}}",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"customers",
+						"{{customerIdWithNameExists}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "07b. Delete Customer by ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 204\", function () {",
+							"    pm.response.to.have.status(204);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "localhost:8080/customers/{{customerIdWithEmailExists}}",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"customers",
+						"{{customerIdWithEmailExists}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "07c. Delete Customer by ID Not Found",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							"",
+							"pm.test(\"Error should be Customer not found\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.error).to.eql(\"Customer not found\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "localhost:8080/customers/0757bd30-c957-42ea-9cb5-6c73928d32ce",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"customers",
+						"0757bd30-c957-42ea-9cb5-6c73928d32ce"
 					]
 				}
 			},
@@ -779,7 +1021,8 @@
 							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData.tier).to.eql(\"Gold\");",
 							"    pm.globals.set(\"goldCustomerId\", jsonData.id);",
-							"});"
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -840,7 +1083,11 @@
 							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData.email).to.eql(\"tiergold@example.com\");",
 							"});",
-							""
+							"",
+							"pm.test(\"Tier should be Gold\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.tier).to.eql(\"Gold\");",
+							"});"
 						],
 						"type": "text/javascript"
 					}
@@ -988,6 +1235,11 @@
 							"pm.test(\"Email: tierplatinum@example.com\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData.email).to.eql(\"tierplatinum@example.com\");",
+							"});",
+							"",
+							"pm.test(\"Tier should be Gold\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.tier).to.eql(\"Platinum\");",
 							"});",
 							""
 						],

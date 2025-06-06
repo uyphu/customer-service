@@ -5,7 +5,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -47,17 +46,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void testHandleResponseStatus() {
-        ResponseStatusException ex = new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found");
-
-        ResponseEntity<ErrorResponse> response = exceptionHandler.handleResponseStatus(ex, request);
-
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertEquals("Resource not found", response.getBody().getError());
-        assertEquals("/test-uri", response.getBody().getPath());
-    }
-
-    @Test
     void testHandleUnexpected() {
         Exception ex = new RuntimeException("Something went wrong");
 
@@ -67,4 +55,27 @@ class GlobalExceptionHandlerTest {
         assertEquals("Internal server error", response.getBody().getError());
         assertEquals("/test-uri", response.getBody().getPath());
     }
+
+    @Test
+    void testHandleCustomerNotFound() {
+        CustomerNotFoundException ex = new CustomerNotFoundException("Customer not found");
+
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleCustomerNotFound(ex, request);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertEquals("Customer not found", response.getBody().getError());
+        assertEquals("/test-uri", response.getBody().getPath());
+    }
+
+    @Test
+    void testHandleIllegalArgument() {
+        IllegalArgumentException ex = new IllegalArgumentException("Invalid input provided");
+
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleIllegalArgument(ex, request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Invalid input provided", response.getBody().getError());
+        assertEquals("/test-uri", response.getBody().getPath());
+    }
+
 }

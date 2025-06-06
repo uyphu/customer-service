@@ -28,10 +28,10 @@ spring:
       enabled: true
       path: /h2-console
 
-  security:
-    user:
-      name: admin
-      password: password
+  # security:
+  #   user:
+  #     name: admin
+  #     password: password
 management:
   endpoints:
     web:
