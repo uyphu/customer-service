@@ -46,10 +46,6 @@ class CustomerServiceImplTest {
 
         when(messageSource.getMessage(anyString(), any(), any(Locale.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
-        when(messageSource.getMessage(eq("customer.error.email-exists"), any(), any()))
-            .thenReturn("customer.error.email-exists");
-        when(messageSource.getMessage(eq("customer.error.name-exists"), any(), any()))
-                .thenReturn("customer.error.name-exists");
         when(messageSource.getMessage(eq("customer.error.not-found"), any(), any()))
                 .thenReturn("Customer not found");
     }
@@ -60,8 +56,8 @@ class CustomerServiceImplTest {
         UUID generatedId = UUID.randomUUID();
         Customer saved = new Customer(generatedId, "John", "john@example.com", new BigDecimal("500"), request.getLastPurchaseDate());
 
-        when(customerRepository.findByEmail("john@example.com")).thenReturn(Optional.empty());
-        when(customerRepository.findByName("John")).thenReturn(Optional.empty());
+        when(customerRepository.findByEmailIgnoreCase("john@example.com")).thenReturn(Optional.empty());
+        when(customerRepository.findByNameIgnoreCase("John")).thenReturn(Optional.empty());
         when(customerRepository.save(any())).thenReturn(saved);
 
         CustomerResponse response = customerService.create(request);
@@ -73,26 +69,6 @@ class CustomerServiceImplTest {
         verify(customerRepository).save(any());
     }
 
-    @Test
-    void testCreate_EmailExists_ShouldThrowConflict() {
-        CustomerRequest request = new CustomerRequest("John", "john@example.com", new BigDecimal("500"), LocalDateTime.now());
-        when(customerRepository.findByEmail("john@example.com")).thenReturn(Optional.of(new Customer()));
-
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> customerService.create(request));
-        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
-        assertEquals("customer.error.email-exists", exception.getReason());
-    }
-
-    @Test
-    void testCreate_NameExists_ShouldThrowConflict() {
-        CustomerRequest request = new CustomerRequest("John", "john@example.com", new BigDecimal("500"), LocalDateTime.now());
-        when(customerRepository.findByEmail("john@example.com")).thenReturn(Optional.empty());
-        when(customerRepository.findByName("John")).thenReturn(Optional.of(new Customer()));
-
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> customerService.create(request));
-        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
-        assertEquals("customer.error.name-exists", exception.getReason());
-    }
 
     @Test
     void testGetById_Success() {
@@ -116,7 +92,7 @@ class CustomerServiceImplTest {
 
         @Test
     void testGetByName_Success() {
-        when(customerRepository.findByName("Test User")).thenReturn(Optional.of(customer));
+        when(customerRepository.findByNameIgnoreCase("Test User")).thenReturn(Optional.of(customer));
 
         CustomerResponse response = customerService.getByName("Test User");
 
@@ -127,7 +103,7 @@ class CustomerServiceImplTest {
 
     @Test
     void testGetByName_NotFound() {
-        when(customerRepository.findByName("Unknown")).thenReturn(Optional.empty());
+        when(customerRepository.findByNameIgnoreCase("Unknown")).thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
                 () -> customerService.getByName("Unknown"));
@@ -138,7 +114,7 @@ class CustomerServiceImplTest {
 
     @Test
     void testGetByEmail_Success() {
-        when(customerRepository.findByEmail("test@example.com")).thenReturn(Optional.of(customer));
+        when(customerRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(customer));
 
         CustomerResponse response = customerService.getByEmail("test@example.com");
 
@@ -149,7 +125,7 @@ class CustomerServiceImplTest {
 
     @Test
     void testGetByEmail_NotFound() {
-        when(customerRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
+        when(customerRepository.findByEmailIgnoreCase("missing@example.com")).thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
                 () -> customerService.getByEmail("missing@example.com"));
@@ -160,7 +136,7 @@ class CustomerServiceImplTest {
 
         @Test
     void testGetByNameOrEmail_BothMatch_Success() {
-        when(customerRepository.findByNameAndEmail("Test User", "test@example.com"))
+        when(customerRepository.findByNameAndEmailAllIgnoreCase("Test User", "test@example.com"))
                 .thenReturn(Optional.of(customer));
 
         CustomerResponse response = customerService.getByNameOrEmail("Test User", "test@example.com");
@@ -172,7 +148,7 @@ class CustomerServiceImplTest {
 
     @Test
     void testGetByNameOrEmail_OnlyNameMatch_Success() {
-        when(customerRepository.findByName("Test User")).thenReturn(Optional.of(customer));
+        when(customerRepository.findByNameIgnoreCase("Test User")).thenReturn(Optional.of(customer));
 
         CustomerResponse response = customerService.getByNameOrEmail("Test User", null);
 
@@ -182,7 +158,7 @@ class CustomerServiceImplTest {
 
     @Test
     void testGetByNameOrEmail_OnlyEmailMatch_Success() {
-        when(customerRepository.findByEmail("test@example.com")).thenReturn(Optional.of(customer));
+        when(customerRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(customer));
 
         CustomerResponse response = customerService.getByNameOrEmail(null, "test@example.com");
 
@@ -192,7 +168,7 @@ class CustomerServiceImplTest {
 
     @Test
     void testGetByNameOrEmail_BothMatch_NotFound() {
-        when(customerRepository.findByNameAndEmail("Unknown", "unknown@example.com"))
+        when(customerRepository.findByNameAndEmailAllIgnoreCase("Unknown", "unknown@example.com"))
                 .thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
@@ -204,7 +180,7 @@ class CustomerServiceImplTest {
 
     @Test
     void testGetByNameOrEmail_OnlyName_NotFound() {
-        when(customerRepository.findByName("Missing")).thenReturn(Optional.empty());
+        when(customerRepository.findByNameIgnoreCase("Missing")).thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
                 () -> customerService.getByNameOrEmail("Missing", null));
@@ -215,7 +191,7 @@ class CustomerServiceImplTest {
 
     @Test
     void testGetByNameOrEmail_OnlyEmail_NotFound() {
-        when(customerRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
+        when(customerRepository.findByEmailIgnoreCase("missing@example.com")).thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
                 () -> customerService.getByNameOrEmail(null, "missing@example.com"));
@@ -238,8 +214,8 @@ class CustomerServiceImplTest {
         CustomerRequest request = new CustomerRequest("Updated Name", "updated@example.com", new BigDecimal("999"), LocalDateTime.now());
 
         when(customerRepository.findById(id)).thenReturn(Optional.of(customer));
-        when(customerRepository.findByEmail("updated@example.com")).thenReturn(Optional.empty());
-        when(customerRepository.findByName("Updated Name")).thenReturn(Optional.empty());
+        when(customerRepository.findByEmailIgnoreCase("updated@example.com")).thenReturn(Optional.empty());
+        when(customerRepository.findByNameIgnoreCase("Updated Name")).thenReturn(Optional.empty());
         when(customerRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         CustomerResponse response = customerService.update(id, request);
@@ -249,32 +225,6 @@ class CustomerServiceImplTest {
         assertEquals("Silver", response.getTier());
     }
 
-    @Test
-    void testUpdate_EmailExists_ShouldThrowConflict() {
-        CustomerRequest request = new CustomerRequest("Updated Name", "duplicate@example.com", new BigDecimal("500"), LocalDateTime.now());
-        Customer existingOther = new Customer(UUID.randomUUID(), "Other", "duplicate@example.com", BigDecimal.ZERO, LocalDateTime.now());
-
-        when(customerRepository.findById(id)).thenReturn(Optional.of(customer));
-        when(customerRepository.findByEmail("duplicate@example.com")).thenReturn(Optional.of(existingOther));
-
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> customerService.update(id, request));
-        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
-        assertEquals("customer.error.email-exists", exception.getReason());
-    }
-
-    @Test
-    void testUpdate_NameExists_ShouldThrowConflict() {
-        CustomerRequest request = new CustomerRequest("Existing Name", "updated@example.com", new BigDecimal("500"), LocalDateTime.now());
-        Customer existingOther = new Customer(UUID.randomUUID(), "Existing Name", "someone@example.com", BigDecimal.ZERO, LocalDateTime.now());
-
-        when(customerRepository.findById(id)).thenReturn(Optional.of(customer));
-        when(customerRepository.findByEmail("updated@example.com")).thenReturn(Optional.empty());
-        when(customerRepository.findByName("Existing Name")).thenReturn(Optional.of(existingOther));
-
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> customerService.update(id, request));
-        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
-        assertEquals("customer.error.name-exists", exception.getReason());
-    }
 
     @Test
     void testUpdate_NotFound_ShouldThrowNotFound() {
@@ -319,8 +269,8 @@ class CustomerServiceImplTest {
         Customer saved = new Customer(generatedId, request.getName(), request.getEmail(),
                 request.getAnnualSpend(), request.getLastPurchaseDate());
 
-        when(customerRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
-        when(customerRepository.findByName(request.getName())).thenReturn(Optional.empty());
+        when(customerRepository.findByEmailIgnoreCase(request.getEmail())).thenReturn(Optional.empty());
+        when(customerRepository.findByNameIgnoreCase(request.getName())).thenReturn(Optional.empty());
         when(customerRepository.save(any())).thenReturn(saved);
 
         CustomerResponse response = customerService.create(request);
@@ -340,8 +290,8 @@ class CustomerServiceImplTest {
         Customer saved = new Customer(generatedId, request.getName(), request.getEmail(),
                 request.getAnnualSpend(), request.getLastPurchaseDate());
 
-        when(customerRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
-        when(customerRepository.findByName(request.getName())).thenReturn(Optional.empty());
+        when(customerRepository.findByEmailIgnoreCase(request.getEmail())).thenReturn(Optional.empty());
+        when(customerRepository.findByNameIgnoreCase(request.getName())).thenReturn(Optional.empty());
         when(customerRepository.save(any())).thenReturn(saved);
 
         CustomerResponse response = customerService.create(request);
@@ -361,8 +311,8 @@ class CustomerServiceImplTest {
         Customer saved = new Customer(generatedId, request.getName(), request.getEmail(),
                 null, request.getLastPurchaseDate());
 
-        when(customerRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
-        when(customerRepository.findByName(request.getName())).thenReturn(Optional.empty());
+        when(customerRepository.findByEmailIgnoreCase(request.getEmail())).thenReturn(Optional.empty());
+        when(customerRepository.findByNameIgnoreCase(request.getName())).thenReturn(Optional.empty());
         when(customerRepository.save(any())).thenReturn(saved);
 
         CustomerResponse response = customerService.create(request);
@@ -382,8 +332,8 @@ class CustomerServiceImplTest {
         Customer saved = new Customer(generatedId, request.getName(), request.getEmail(),
                 request.getAnnualSpend(), request.getLastPurchaseDate());
 
-        when(customerRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
-        when(customerRepository.findByName(request.getName())).thenReturn(Optional.empty());
+        when(customerRepository.findByEmailIgnoreCase(request.getEmail())).thenReturn(Optional.empty());
+        when(customerRepository.findByNameIgnoreCase(request.getName())).thenReturn(Optional.empty());
         when(customerRepository.save(any())).thenReturn(saved);
 
         CustomerResponse response = customerService.create(request);

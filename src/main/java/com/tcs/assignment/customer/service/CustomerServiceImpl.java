@@ -32,16 +32,6 @@ public class CustomerServiceImpl implements CustomerService {
     public CustomerResponse create(CustomerRequest request) {
         log.info("Creating customer with email: {}", request.getEmail());
 
-        if (customerRepository.findByEmail(request.getEmail()).isPresent()) {
-            log.warn("Duplicate email found: {}", request.getEmail());
-            throw new ResponseStatusException(HttpStatus.CONFLICT, getMessage("customer.error.email-exists"));
-        }
-
-        if (customerRepository.findByName(request.getName()).isPresent()) {
-            log.warn("Duplicate name found: {}", request.getName());
-            throw new ResponseStatusException(HttpStatus.CONFLICT, getMessage("customer.error.name-exists"));
-        }
-
         Customer customer = new Customer(null, request.getName(), request.getEmail(),
                 request.getAnnualSpend(), request.getLastPurchaseDate());
 
@@ -65,7 +55,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public CustomerResponse getByName(String name) {
         log.debug("Fetching customer by name: {}", name);
-        return customerRepository.findByName(name)
+        return customerRepository.findByNameIgnoreCase(name)
                 .map(this::toResponse)
                 .orElseThrow(() -> {
                     log.warn("Customer not found with name: {}", name);
@@ -76,7 +66,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public CustomerResponse getByEmail(String email) {
         log.debug("Fetching customer by email: {}", email);
-        return customerRepository.findByEmail(email)
+        return customerRepository.findByEmailIgnoreCase(email)
                 .map(this::toResponse)
                 .orElseThrow(() -> {
                     log.warn("Customer not found with email: {}", email);
@@ -89,7 +79,7 @@ public class CustomerServiceImpl implements CustomerService {
         log.debug("Fetching customer by name/email: {} / {}", name, email);
 
         if (name != null && email != null) {
-            return customerRepository.findByNameAndEmail(name, email)
+            return customerRepository.findByNameAndEmailAllIgnoreCase(name, email)
                     .map(this::toResponse)
                     .orElseThrow(() -> {
                         log.warn("Customer not found with name/email: {} / {}", name, email);
@@ -118,21 +108,6 @@ public class CustomerServiceImpl implements CustomerService {
                     log.warn("Customer not found with ID: {}", id);
                     return notFoundException();
                 });
-
-        customerRepository.findByEmail(request.getEmail())
-                .filter(existing -> !existing.getId().equals(id))
-                .ifPresent(existing -> {
-                    log.warn("Email already exists for another customer: {}", request.getEmail());
-                    throw new ResponseStatusException(HttpStatus.CONFLICT, getMessage("customer.error.email-exists"));
-                });
-
-        customerRepository.findByName(request.getName())
-                .filter(existing -> !existing.getId().equals(id))
-                .ifPresent(existing -> {
-                    log.warn("Name already exists for another customer: {}", request.getName());
-                    throw new ResponseStatusException(HttpStatus.CONFLICT, getMessage("customer.error.name-exists"));
-                });
-
         customer.setName(request.getName());
         customer.setEmail(request.getEmail());
         customer.setAnnualSpend(request.getAnnualSpend());

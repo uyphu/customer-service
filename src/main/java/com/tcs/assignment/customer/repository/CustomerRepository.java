@@ -11,4 +11,8 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
     Optional<Customer> findByName(String name);
     Optional<Customer> findByEmail(String email);
     Optional<Customer> findByNameAndEmail(String name, String email);
+
+    Optional<Customer> findByNameIgnoreCase(String name);
+    Optional<Customer> findByEmailIgnoreCase(String email);
+    Optional<Customer> findByNameAndEmailAllIgnoreCase(String name, String email);
 }
